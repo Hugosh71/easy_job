@@ -2,7 +2,6 @@
 import os
 import random
 import subprocess
-from datetime import datetime
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
@@ -18,89 +17,48 @@ def write_number(num):
         f.write(str(num))
 
 
-def generate_random_commit_message():
-    from transformers import pipeline
-
-    generator = pipeline(
-        "text-generation",
-        model="openai-community/gpt2",
-    )
-    prompt = """
-        Generate a Git commit message following the Conventional Commits standard. 
-        The message should include a type, an optional scope, and a subject.
-        Please keep it short. 
-        Here are some examples:
-
-        - feat(auth): add user authentication module
-        - fix(api): resolve null pointer exception in user endpoint
-        - docs(readme): update installation instructions
-        - chore(deps): upgrade lodash to version 4.17.21
-        - refactor(utils): simplify date formatting logic
-
-        Now, generate a new commit message:
-    """
-    generated = generator(
-        prompt,
-        max_new_tokens=50,
-        num_return_sequences=1,
-        temperature=0.9,
-        top_k=50,  
-        top_p=0.9,
-        truncation=True,
-    )
-    text = generated[0]["generated_text"]
-
-    if "- " in text:
-        return text.rsplit("- ", 1)[-1].strip()
-    else:
-        raise ValueError(f"Unexpected generated text {text}")
-
-
 def git_commit():
-    
     subprocess.run(["git", "add", "commit.txt"])
-    if "FANCY_JOB_USE_LLM" in os.environ:
-        commit_message = generate_random_commit_message()
-    else:
-        date = datetime.now().strftime("%Y-%m-%d")
-        commit_message = f"Update number: {date}"
+
+    messages = [
+        "chore: update dependency versions",
+        "fix: correct typo in documentation",
+        "refactor: simplify commit counter logic",
+        "style: format code according to style guide",
+        "ci: configure GitHub Actions workflow",
+        "docs: improve README installation steps",
+        "perf: reduce file IO operations",
+        "build: bump version number",
+        "test: add basic coverage for commit logic",
+        "fix: handle missing commit.txt gracefully",
+        "chore: add commit message templates",
+        "ci: update Python version in workflow",
+        "docs: add contributing guidelines",
+        "refactor: rename variables for clarity",
+        "fix: avoid crash on initial run",
+        "style: unify code indentation",
+        "perf: optimize script startup time",
+        "chore: clean up unused imports",
+        "docs: update license year",
+        "fix: correct permissions for commit.txt",
+        "ci: add workflow_dispatch trigger",
+        "build: setup linting and formatting",
+        "refactor: extract helper functions",
+        "fix: guard against file read errors",
+        "chore: update project metadata"
+    ]
+
+    commit_message = random.choice(messages)
     subprocess.run(["git", "commit", "-m", commit_message])
 
 
 def git_push():
-    # Push the committed changes to GitHub
     result = subprocess.run(["git", "push"], capture_output=True, text=True)
     if result.returncode == 0:
         print("Changes pushed to GitHub successfully.")
     else:
         print("Error pushing to GitHub:")
         print(result.stderr)
-
-
-def update_cron_with_random_time():
-    random_hour = random.randint(0, 23)
-    random_minute = random.randint(0, 59)
-
-    new_cron_command = f"{random_minute} {random_hour} * * * cd {script_dir} && python3 {os.path.join(script_dir, 'cronjob.py')}\n"
-
-    cron_file = "/tmp/current_cron"
-    os.system(
-        f"crontab -l > {cron_file} 2>/dev/null || true"
-    )
-
-    with open(cron_file, "r") as file:
-        lines = file.readlines()
-
-    with open(cron_file, "w") as file:
-        for line in lines:
-            if "cronjob.py" not in line:
-                file.write(line)
-        file.write(new_cron_command)
-
-    os.system(f"crontab {cron_file}")
-    os.remove(cron_file)
-
-    print(f"Cron job updated to run at {random_hour}:{random_minute} tomorrow.")
 
 
 def main():
@@ -110,7 +68,6 @@ def main():
         write_number(new_number)
         git_commit()
         git_push()
-        update_cron_with_random_time()
     except Exception as e:
         print(f"Error: {str(e)}")
         exit(1)
