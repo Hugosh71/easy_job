@@ -2,8 +2,8 @@ name: Random Commit
 
 on:
   schedule:
-    - cron: "0 7 * * *"  
-  workflow_dispatch:       
+    - cron: "0 7 * * *"   # runs every day at 07:00 UTC
+  workflow_dispatch:       # manual trigger
 
 jobs:
   maybe_commit:
@@ -12,26 +12,28 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0   # important to get full commit history
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      - name: Install dependencies (if any)
-        run: pip install -r requirements.txt || true
-
-      - name: Decide whether to commit now
+      # Only pick wait time if it's a scheduled run
+      - name: Pick random wait time (1–3 days)
+        if: ${{ github.event_name == 'schedule' }}
         id: decide
         run: |
           rand=$(( ( RANDOM % 3 ) + 1 ))
           echo "Random wait chosen: $rand days"
           echo "days=$rand" >> $GITHUB_OUTPUT
 
-      - name: Check last commit date
+      - name: Days since last commit
+        if: ${{ github.event_name == 'schedule' }}
         id: last
         run: |
-          last_date=$(git log -1 --format=%ci origin/main | cut -d' ' -f1)
+          last_date=$(git log -1 --format=%ci main | cut -d' ' -f1)
           now_date=$(date '+%Y-%m-%d')
           last_seconds=$(date -d "$last_date" +%s)
           now_seconds=$(date -d "$now_date" +%s)
@@ -39,14 +41,20 @@ jobs:
           echo "Days since last commit: $diff_days"
           echo "since=$diff_days" >> $GITHUB_OUTPUT
 
-      - name: Run commit script
-        if: ${{ steps.last.outputs.since >= steps.decide.outputs.days }}
+      - name: Run commit script (manual trigger)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
+          git config user.name "Your Name"
+          git config user.email "you@example.com"
           python cronjob.py
-          git config user.name "Hugosh71"
-          git config user.email "fanchinihugo@yahoo.fr"
-          git push
+
+      - name: Run commit script (scheduled trigger)
+        if: ${{ github.event_name == 'schedule' && steps.last.outputs.since >= steps.decide.outputs.days }}
+        run: |
+          git config user.name "Your Name"
+          git config user.email "you@example.com"
+          python cronjob.py
 
       - name: Skip commit
-        if: ${{ steps.last.outputs.since < steps.decide.outputs.days }}
-        run: echo "Skipping commit today"
+        if: ${{ github.event_name == 'schedule' && steps.last.outputs.since < steps.decide.outputs.days }}
+        run: echo "Skipping commit today. Waiting for random ${{ steps.decide.outputs.days }} days."
