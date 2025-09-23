@@ -1,0 +1,52 @@
+name: Random Commit
+
+on:
+  schedule:
+    - cron: "0 7 * * *"  
+  workflow_dispatch:       
+
+jobs:
+  maybe_commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies (if any)
+        run: pip install -r requirements.txt || true
+
+      - name: Decide whether to commit now
+        id: decide
+        run: |
+          rand=$(( ( RANDOM % 3 ) + 1 ))
+          echo "Random wait chosen: $rand days"
+          echo "days=$rand" >> $GITHUB_OUTPUT
+
+      - name: Check last commit date
+        id: last
+        run: |
+          last_date=$(git log -1 --format=%ci origin/main | cut -d' ' -f1)
+          now_date=$(date '+%Y-%m-%d')
+          last_seconds=$(date -d "$last_date" +%s)
+          now_seconds=$(date -d "$now_date" +%s)
+          diff_days=$(( (now_seconds - last_seconds) / 86400 ))
+          echo "Days since last commit: $diff_days"
+          echo "since=$diff_days" >> $GITHUB_OUTPUT
+
+      - name: Run commit script
+        if: ${{ steps.last.outputs.since >= steps.decide.outputs.days }}
+        run: |
+          python cronjob.py
+          git config user.name "Your Name"
+          git config user.email "you@example.com"
+          git push
+
+      - name: Skip commit
+        if: ${{ steps.last.outputs.since < steps.decide.outputs.days }}
+        run: echo "Skipping commit today"
