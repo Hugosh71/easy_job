@@ -17,59 +17,67 @@ def write_number(num):
         f.write(str(num))
 
 
-def git_commit():
+def git_commit(commit_message):
     subprocess.run(["git", "add", "commit.txt"])
-
-    messages = [
-        "chore: update dependency versions",
-        "fix: correct typo in documentation",
-        "refactor: simplify commit counter logic",
-        "style: format code according to style guide",
-        "ci: configure GitHub Actions workflow",
-        "docs: improve README installation steps",
-        "perf: reduce file IO operations",
-        "build: bump version number",
-        "test: add basic coverage for commit logic",
-        "fix: handle missing commit.txt gracefully",
-        "chore: add commit message templates",
-        "ci: update Python version in workflow",
-        "docs: add contributing guidelines",
-        "refactor: rename variables for clarity",
-        "fix: avoid crash on initial run",
-        "style: unify code indentation",
-        "perf: optimize script startup time",
-        "chore: clean up unused imports",
-        "docs: update license year",
-        "fix: correct permissions for commit.txt",
-        "ci: add workflow_dispatch trigger",
-        "build: setup linting and formatting",
-        "refactor: extract helper functions",
-        "fix: guard against file read errors",
-        "chore: update project metadata"
-    ]
-
-    commit_message = random.choice(messages)
+    print(f"Chosen commit message: {commit_message}")
     subprocess.run(["git", "commit", "-m", commit_message])
 
 
 def git_push():
     result = subprocess.run(["git", "push"], capture_output=True, text=True)
     if result.returncode == 0:
-        print("Changes pushed to GitHub successfully.")
+        print("✅ Changes pushed to GitHub successfully.")
     else:
-        print("Error pushing to GitHub:")
+        print("❌ Error pushing to GitHub:")
         print(result.stderr)
 
 
 def main():
     try:
         current_number = read_number()
-        new_number = current_number + 1
-        write_number(new_number)
-        git_commit()
+        num_commits = random.randint(1, 20)  
+        print(f"🔄 Generating {num_commits} commits this run...")
+
+        messages = [
+            "chore: update dependency versions",
+            "fix: correct typo in documentation",
+            "refactor: simplify commit counter logic",
+            "style: format code according to style guide",
+            "ci: configure GitHub Actions workflow",
+            "docs: improve README installation steps",
+            "perf: reduce file IO operations",
+            "build: bump version number",
+            "test: add basic coverage for commit logic",
+            "fix: handle missing commit.txt gracefully",
+            "chore: add commit message templates",
+            "ci: update Python version in workflow",
+            "docs: add contributing guidelines",
+            "refactor: rename variables for clarity",
+            "fix: avoid crash on initial run",
+            "style: unify code indentation",
+            "perf: optimize script startup time",
+            "chore: clean up unused imports",
+            "docs: update license year",
+            "fix: correct permissions for commit.txt",
+            "ci: add workflow_dispatch trigger",
+            "build: setup linting and formatting",
+            "refactor: extract helper functions",
+            "fix: guard against file read errors",
+            "chore: update project metadata"
+        ]
+
+        for i in range(num_commits):
+            new_number = current_number + 1
+            write_number(new_number)
+            commit_message = random.choice(messages)
+            print(f"➡️ Commit {i+1}/{num_commits}")
+            git_commit(commit_message)
+            current_number = new_number
+
+        print(f"✅ Finished generating {num_commits} commits.")
         git_push()
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"❌ Error: {str(e)}")
         exit(1)
 
 
